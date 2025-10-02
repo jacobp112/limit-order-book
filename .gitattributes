@@ -1,0 +1,4 @@
+# Journals and snapshots are compared byte-for-byte; keep line endings canonical.
+* text=auto eol=lf
+*.wasm binary
+*.png binary
