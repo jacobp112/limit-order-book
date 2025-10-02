@@ -31,11 +31,16 @@ This is a study of matching-engine mechanics, not an exchange.
 | Price | `i64` newtype | ticks | `1 ..= MAX_PRICE` |
 | Quantity | `u64` newtype | lots | `1 ..= MAX_QTY` |
 | Order id | `u64` newtype | assigned by engine, starts at 1 | – |
-| Sequence | `u64` newtype | logical clock, one tick per accepted book change | – |
+| Sequence | `u64` newtype | logical clock; a new value each time an order is accepted or loses priority | – |
 
-No floating point is used for price or quantity. The bounds are chosen so that
-the total quantity of any price level, and any ledger sum used in tests, fits in
-the accumulator type without overflow.
+`MAX_PRICE` and `MAX_QTY` are both 10^9. No floating point is used for price or
+quantity. With at most `u32::MAX` resting orders, a level total is bounded by
+`MAX_QTY · u32::MAX < u64::MAX`, so level accounting cannot overflow; ledger
+sums in tests use `u128`.
+
+Validation order is quantity first, then price, then book-dependent checks
+(`UnknownOrder`, `AmendNoChange`), so each invalid command has exactly one
+reported reason.
 
 ## Commands
 
