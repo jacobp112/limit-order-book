@@ -2,41 +2,41 @@
 
 Status: `todo`, `doing`, `done`.
 
-## US-001 — Submit limit order · todo
+## US-001 — Submit limit order · done
 As a market participant, I want to submit a limit order so that it rests on the
 book until it can trade at its specified price or better.
 - A non-crossing limit order is acknowledged with a new order id and rests.
 - It appears in depth at its price, with the level total increased by its quantity.
 - Best bid/ask reflect it when it improves the top of book.
 
-## US-002 — Trade at the best available price · todo
+## US-002 — Trade at the best available price · done
 As a participant submitting a crossing order, I want it to trade against the
 best-priced opposite orders first, at their prices.
 - A buy crossing several ask levels fills against the lowest ask first.
 - Each trade reports maker id, taker id, price and quantity; the price is the maker's.
 - A buy never trades above its limit; a sell never trades below it.
 
-## US-003 — Partial fills across levels · todo
+## US-003 — Partial fills across levels · done
 As a participant, I want a large order to fill as much as possible and keep the rest.
 - An order larger than the best level continues into the next level.
 - A partially filled maker stays at the head of its queue with reduced quantity.
 - An unfilled limit remainder rests at its limit price.
 
-## US-004 — Time priority within a level · todo
+## US-004 — Time priority within a level · done
 As a participant, I want orders at the same price filled in arrival order.
 - Given A then B at the same price, an incoming order fills A before B.
 
-## US-005 — Market order · todo
+## US-005 — Market order · done
 As a participant, I want a market order that takes available liquidity at any price.
 - It fills across levels until complete or the opposite side is empty.
 - Any unfilled remainder is cancelled with reason `NoLiquidity`; nothing rests.
 
-## US-006 — Immediate-or-cancel order · todo
+## US-006 — Immediate-or-cancel order · done
 As a participant, I want an IOC order that trades up to its limit immediately and never rests.
 - It fills only at prices within its limit.
 - Any remainder is cancelled with reason `IocRemainder`.
 
-## US-007 — Cancel order · todo
+## US-007 — Cancel order · done
 As a participant, I want to cancel my resting order.
 - The order leaves the book; the event reports the open quantity cancelled.
 - Cancelling an unknown, filled or already cancelled order is rejected with `UnknownOrder`.
@@ -48,12 +48,12 @@ As a participant, I want to change the price or open quantity of my resting orde
 - A new price that crosses trades immediately; any remainder rests.
 - Amending to zero, or to the current values, is rejected.
 
-## US-009 — Safe rejection of invalid commands · todo
+## US-009 — Safe rejection of invalid commands · doing
 As an operator, I want invalid commands rejected without side effects.
 - Each invalid command yields one `Rejected` event with a specific reason.
 - The book snapshot is byte-identical before and after.
 
-## US-010 — Inspect the book · todo
+## US-010 — Inspect the book · done
 As a participant, I want to see top of book and depth.
 - Best bid and ask, and per-level totals in price order, are available.
 - Per-order detail (id, quantity) is available in queue order for each level.

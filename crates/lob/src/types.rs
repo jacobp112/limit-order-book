@@ -53,6 +53,24 @@ impl Qty {
     pub const fn is_zero(self) -> bool {
         self.0 == 0
     }
+
+    /// Sum, or `None` on overflow.
+    #[must_use]
+    pub const fn checked_add(self, rhs: Self) -> Option<Self> {
+        match self.0.checked_add(rhs.0) {
+            Some(v) => Some(Self(v)),
+            None => None,
+        }
+    }
+
+    /// Difference, or `None` if `rhs > self`.
+    #[must_use]
+    pub const fn checked_sub(self, rhs: Self) -> Option<Self> {
+        match self.0.checked_sub(rhs.0) {
+            Some(v) => Some(Self(v)),
+            None => None,
+        }
+    }
 }
 
 impl fmt::Display for Qty {
