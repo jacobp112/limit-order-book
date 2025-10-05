@@ -1,0 +1,45 @@
+# Invalid commands are rejected with one reason and change nothing.
+
+> submit buy limit 100 0
+rejected zero-quantity
+> submit buy limit 0 5
+rejected price-out-of-range
+> submit buy limit -1 5
+rejected price-out-of-range
+> submit buy limit 1000000001 5
+rejected price-out-of-range
+> submit sell market 1000000001
+rejected quantity-too-large
+# Quantity is checked before price.
+> submit sell ioc 0 0
+rejected zero-quantity
+= empty
+
+# Boundary values are accepted. Ids start at 1: rejections consume none.
+> submit sell limit 1000000000 1000000000
+accepted id=1 sell limit 1000000000 qty=1000000000 seq=1
+rested id=1 sell px=1000000000 qty=1000000000 seq=1
+> submit buy limit 1 1000000000
+accepted id=2 buy limit 1 qty=1000000000 seq=2
+rested id=2 buy px=1 qty=1000000000 seq=2
+= ask 1000000000: 1x1000000000
+= bid 1: 2x1000000000
+
+> cancel 0
+rejected id=0 unknown-order
+> cancel 18446744073709551615
+rejected id=18446744073709551615 unknown-order
+> cancel 1
+cancelled id=1 qty=1000000000 user
+> cancel 1
+rejected id=1 unknown-order
+
+> amend 2 - 0
+rejected id=2 zero-quantity
+> amend 2 0 5
+rejected id=2 price-out-of-range
+> amend 2 - 1000000001
+rejected id=2 quantity-too-large
+> amend 2 1 1000000000
+rejected id=2 amend-no-change
+= bid 1: 2x1000000000

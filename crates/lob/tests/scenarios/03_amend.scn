@@ -1,0 +1,53 @@
+# Amend priority rules.
+
+> submit buy limit 100 10
+accepted id=1 buy limit 100 qty=10 seq=1
+rested id=1 buy px=100 qty=10 seq=1
+> submit buy limit 100 10
+accepted id=2 buy limit 100 qty=10 seq=2
+rested id=2 buy px=100 qty=10 seq=2
+> submit sell limit 103 6
+accepted id=3 sell limit 103 qty=6 seq=3
+rested id=3 sell px=103 qty=6 seq=3
+
+# Same-price decrease keeps queue position and sequence number.
+> amend 1 - 6
+amended id=1 px=100 qty=10->6 seq=1 kept
+= ask 103: 3x6
+= bid 100: 1x6 2x10
+
+# Same-price increase moves to the back.
+> amend 1 - 8
+amended id=1 px=100 qty=6->8 seq=4 lost
+rested id=1 buy px=100 qty=8 seq=4
+= ask 103: 3x6
+= bid 100: 2x10 1x8
+
+# A crossing price change trades as aggressor; the remainder rests.
+> amend 2 104 10
+amended id=2 px=104 qty=10->10 seq=5 lost
+trade maker=3 taker=2 buy px=103 qty=6
+filled id=3
+rested id=2 buy px=104 qty=4 seq=5
+= bid 104: 2x4
+= bid 100: 1x8
+
+# After a partial fill, amend quantities refer to the open quantity.
+> submit sell limit 104 1
+accepted id=4 sell limit 104 qty=1 seq=6
+trade maker=2 taker=4 sell px=104 qty=1
+filled id=4
+= bid 104: 2x3
+= bid 100: 1x8
+> amend 2 - 3
+rejected id=2 amend-no-change
+> amend 2 - 1
+amended id=2 px=104 qty=3->1 seq=5 kept
+= bid 104: 2x1
+= bid 100: 1x8
+
+# Filled orders cannot be cancelled or amended.
+> cancel 3
+rejected id=3 unknown-order
+> amend 4 - 1
+rejected id=4 unknown-order

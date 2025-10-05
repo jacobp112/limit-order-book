@@ -1,0 +1,62 @@
+# Boundary behaviour around crossing, level lifetime and re-queueing.
+
+# A limit equal to the best opposite price crosses.
+> submit sell limit 50 2
+accepted id=1 sell limit 50 qty=2 seq=1
+rested id=1 sell px=50 qty=2 seq=1
+> submit buy limit 50 1
+accepted id=2 buy limit 50 qty=1 seq=2
+trade maker=1 taker=2 buy px=50 qty=1
+filled id=2
+= ask 50: 1x1
+
+# A partially filled maker that increases its size loses its place.
+> submit sell limit 50 4
+accepted id=3 sell limit 50 qty=4 seq=3
+rested id=3 sell px=50 qty=4 seq=3
+> amend 1 - 5
+amended id=1 px=50 qty=1->5 seq=4 lost
+rested id=1 sell px=50 qty=5 seq=4
+= ask 50: 3x4 1x5
+
+# Emptying a level removes it; the next order at that price starts a new queue.
+> submit buy limit 50 9
+accepted id=4 buy limit 50 qty=9 seq=5
+trade maker=3 taker=4 buy px=50 qty=4
+filled id=3
+trade maker=1 taker=4 buy px=50 qty=5
+filled id=1
+filled id=4
+= empty
+> submit sell limit 50 1
+accepted id=5 sell limit 50 qty=1 seq=6
+rested id=5 sell px=50 qty=1 seq=6
+
+# An amend that crosses several levels can fill completely.
+> submit sell limit 51 1
+accepted id=6 sell limit 51 qty=1 seq=7
+rested id=6 sell px=51 qty=1 seq=7
+> submit buy limit 40 2
+accepted id=7 buy limit 40 qty=2 seq=8
+rested id=7 buy px=40 qty=2 seq=8
+> amend 7 60 2
+amended id=7 px=60 qty=2->2 seq=9 lost
+trade maker=5 taker=7 buy px=50 qty=1
+filled id=5
+trade maker=6 taker=7 buy px=51 qty=1
+filled id=6
+filled id=7
+= empty
+
+# Moving a sell to a price that still does not cross just re-queues it.
+> submit buy limit 30 1
+accepted id=8 buy limit 30 qty=1 seq=10
+rested id=8 buy px=30 qty=1 seq=10
+> submit sell limit 35 1
+accepted id=9 sell limit 35 qty=1 seq=11
+rested id=9 sell px=35 qty=1 seq=11
+> amend 9 31 1
+amended id=9 px=31 qty=1->1 seq=12 lost
+rested id=9 sell px=31 qty=1 seq=12
+= ask 31: 9x1
+= bid 30: 8x1

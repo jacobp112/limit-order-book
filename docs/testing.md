@@ -16,7 +16,11 @@ structure, and failing cases are persisted in `proptest-regressions/`.
 Fuzzing uses `cargo-fuzz` (libFuzzer) with `arbitrary`. libFuzzer's Windows
 support is experimental, so fuzzing is run in a Linux container.
 
-Edge cases found during development become scenario tests.
+Scenario files (`crates/lob/tests/scenarios/*.scn`) interleave journal
+commands with the exact events expected and, optionally, the whole book as a
+price ladder afterwards; the format is described in `tests/scenarios.rs`. A
+mismatch reports the line, both event lists and the journal prefix that
+reproduces it. Edge cases found during development become scenario tests.
 
 Quality gates before every commit:
 

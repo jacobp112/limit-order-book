@@ -1,0 +1,44 @@
+# Market and IOC orders never rest.
+
+> submit buy market 5
+accepted id=1 buy market qty=5 seq=1
+cancelled id=1 qty=5 no-liquidity
+= empty
+> submit sell ioc 100 5
+accepted id=2 sell ioc 100 qty=5 seq=2
+cancelled id=2 qty=5 ioc-remainder
+= empty
+
+> submit buy limit 100 3
+accepted id=3 buy limit 100 qty=3 seq=3
+rested id=3 buy px=100 qty=3 seq=3
+> submit buy limit 98 3
+accepted id=4 buy limit 98 qty=3 seq=4
+rested id=4 buy px=98 qty=3 seq=4
+
+# IOC stops at its limit: 98 is below 99.
+> submit sell ioc 99 5
+accepted id=5 sell ioc 99 qty=5 seq=5
+trade maker=3 taker=5 sell px=100 qty=3
+filled id=3
+cancelled id=5 qty=2 ioc-remainder
+= bid 98: 4x3
+
+# Market ignores price, takes what exists, cancels the rest.
+> submit sell market 5
+accepted id=6 sell market qty=5 seq=6
+trade maker=4 taker=6 sell px=98 qty=3
+filled id=4
+cancelled id=6 qty=2 no-liquidity
+= empty
+
+# Consuming exactly the available liquidity reports filled, not cancelled.
+> submit sell limit 110 2
+accepted id=7 sell limit 110 qty=2 seq=7
+rested id=7 sell px=110 qty=2 seq=7
+> submit buy market 2
+accepted id=8 buy market qty=2 seq=8
+trade maker=7 taker=8 buy px=110 qty=2
+filled id=7
+filled id=8
+= empty

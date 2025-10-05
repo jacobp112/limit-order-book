@@ -1,0 +1,48 @@
+# Price priority across levels, FIFO within a level, partial fills.
+
+> submit sell limit 101 5
+accepted id=1 sell limit 101 qty=5 seq=1
+rested id=1 sell px=101 qty=5 seq=1
+> submit sell limit 102 5
+accepted id=2 sell limit 102 qty=5 seq=2
+rested id=2 sell px=102 qty=5 seq=2
+> submit sell limit 101 3
+accepted id=3 sell limit 101 qty=3 seq=3
+rested id=3 sell px=101 qty=3 seq=3
+> submit buy limit 99 4
+accepted id=4 buy limit 99 qty=4 seq=4
+rested id=4 buy px=99 qty=4 seq=4
+= ask 102: 2x5
+= ask 101: 1x5 3x3
+= bid 99: 4x4
+
+# Takes all of order 1, then part of order 3; never reaches 102.
+> submit buy limit 101 7
+accepted id=5 buy limit 101 qty=7 seq=5
+trade maker=1 taker=5 buy px=101 qty=5
+filled id=1
+trade maker=3 taker=5 buy px=101 qty=2
+filled id=5
+= ask 102: 2x5
+= ask 101: 3x1
+= bid 99: 4x4
+
+# Sweeps two levels and rests the remainder at its limit.
+> submit buy limit 102 10
+accepted id=6 buy limit 102 qty=10 seq=6
+trade maker=3 taker=6 buy px=101 qty=1
+filled id=3
+trade maker=2 taker=6 buy px=102 qty=5
+filled id=2
+rested id=6 buy px=102 qty=4 seq=6
+= bid 102: 6x4
+= bid 99: 4x4
+
+# A sell with a lower limit trades at each resting bid's own price.
+> submit sell limit 90 6
+accepted id=7 sell limit 90 qty=6 seq=7
+trade maker=6 taker=7 sell px=102 qty=4
+filled id=6
+trade maker=4 taker=7 sell px=99 qty=2
+filled id=7
+= bid 99: 4x2
