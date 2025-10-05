@@ -1,8 +1,8 @@
 //! Matching behaviour through the public API, grouped by user story.
 
 use lob::{
-    CancelReason, Event, LevelSummary, MatchingEngine, OrderId, OrderType, Price, Qty,
-    RejectReason, Seq, Side,
+    CancelReason, Command, Event, LevelSummary, MatchingEngine, OrderId, OrderType, Price,
+    Priority, Qty, RejectReason, Seq, Side,
 };
 
 use Side::{Buy, Sell};
@@ -31,6 +31,13 @@ impl Harness {
     fn cancel(&mut self, id: u64) -> Vec<Event> {
         let mut out = Vec::new();
         self.engine.cancel(OrderId(id), &mut out);
+        out
+    }
+
+    fn amend(&mut self, id: u64, price: Option<i64>, qty: u64) -> Vec<Event> {
+        let mut out = Vec::new();
+        self.engine
+            .amend(OrderId(id), price.map(Price), Qty(qty), &mut out);
         out
     }
 
@@ -341,6 +348,209 @@ fn cancel_of_unknown_filled_or_cancelled_order_is_rejected() {
             "cancel {id}"
         );
     }
+}
+
+// US-008 — amend
+
+fn amended(id: u64, price: i64, old_qty: u64, qty: u64, seq: u64, priority: Priority) -> Event {
+    Event::Amended {
+        id: OrderId(id),
+        price: Price(price),
+        old_qty: Qty(old_qty),
+        qty: Qty(qty),
+        seq: Seq(seq),
+        priority,
+    }
+}
+
+#[test]
+fn same_price_decrease_keeps_queue_position() {
+    let mut h = Harness::new();
+    h.limit(Buy, 100, 10); // 1
+    h.limit(Buy, 100, 10); // 2
+    let ev = h.amend(1, None, 4);
+    assert_eq!(ev, [amended(1, 100, 10, 4, 1, Priority::Kept)]);
+    assert_eq!(h.queue(Buy, 100), [(1, 4), (2, 10)]);
+    assert_eq!(h.depth(Buy), [(100, 14, 2)]);
+}
+
+#[test]
+fn explicit_same_price_is_treated_like_no_price() {
+    let mut h = Harness::new();
+    h.limit(Buy, 100, 10);
+    h.limit(Buy, 100, 10);
+    let ev = h.amend(1, Some(100), 4);
+    assert_eq!(ev, [amended(1, 100, 10, 4, 1, Priority::Kept)]);
+}
+
+#[test]
+fn same_price_increase_moves_to_back() {
+    let mut h = Harness::new();
+    h.limit(Buy, 100, 10); // 1
+    h.limit(Buy, 100, 10); // 2
+    let ev = h.amend(1, None, 12);
+    assert_eq!(
+        ev,
+        [
+            amended(1, 100, 10, 12, 3, Priority::Lost),
+            Event::Rested {
+                id: OrderId(1),
+                side: Buy,
+                price: Price(100),
+                qty: Qty(12),
+                seq: Seq(3),
+            },
+        ]
+    );
+    assert_eq!(h.queue(Buy, 100), [(2, 10), (1, 12)]);
+}
+
+#[test]
+fn non_crossing_price_change_moves_to_back_of_new_level() {
+    let mut h = Harness::new();
+    h.limit(Sell, 105, 5); // 1
+    h.limit(Sell, 106, 5); // 2
+    let ev = h.amend(1, Some(106), 5);
+    assert_eq!(ev[0], amended(1, 106, 5, 5, 3, Priority::Lost));
+    assert_eq!(h.queue(Sell, 106), [(2, 5), (1, 5)]);
+    assert_eq!(h.depth(Sell), [(106, 10, 2)]);
+}
+
+#[test]
+fn price_change_back_to_original_level_still_loses_priority() {
+    let mut h = Harness::new();
+    h.limit(Buy, 100, 1); // 1
+    h.limit(Buy, 100, 1); // 2
+    h.amend(1, Some(99), 1);
+    h.amend(1, Some(100), 1);
+    assert_eq!(h.queue(Buy, 100), [(2, 1), (1, 1)]);
+}
+
+#[test]
+fn crossing_price_change_trades_as_aggressor_then_rests() {
+    let mut h = Harness::new();
+    h.limit(Sell, 101, 3); // 1
+    h.limit(Sell, 102, 3); // 2
+    h.limit(Buy, 99, 5); // 3
+    let ev = h.amend(3, Some(101), 5);
+    assert_eq!(ev[0], amended(3, 101, 5, 5, 4, Priority::Lost));
+    assert_eq!(trades(&ev), [(1, 3, 101, 3)]);
+    assert_eq!(
+        last(&ev),
+        Event::Rested {
+            id: OrderId(3),
+            side: Buy,
+            price: Price(101),
+            qty: Qty(2),
+            seq: Seq(4),
+        }
+    );
+    assert_eq!(h.engine.book().best_bid(), Some(Price(101)));
+    assert_eq!(h.engine.book().best_ask(), Some(Price(102)));
+}
+
+#[test]
+fn crossing_amend_can_fill_completely() {
+    let mut h = Harness::new();
+    h.limit(Buy, 100, 4); // 1
+    h.limit(Sell, 103, 4); // 2
+    let ev = h.amend(2, Some(100), 4);
+    assert_eq!(trades(&ev), [(1, 2, 100, 4)]);
+    assert_eq!(last(&ev), Event::Filled { id: OrderId(2) });
+    assert!(h.engine.book().is_empty());
+}
+
+#[test]
+fn amend_after_partial_fill_sets_new_open_quantity() {
+    let mut h = Harness::new();
+    h.limit(Sell, 100, 10); // 1
+    h.limit(Buy, 100, 6); // 2, leaves 1 with 4 open
+    let ev = h.amend(1, None, 3);
+    assert_eq!(ev, [amended(1, 100, 4, 3, 1, Priority::Kept)]);
+    let ev = h.amend(1, None, 8);
+    assert_eq!(ev[0], amended(1, 100, 3, 8, 3, Priority::Lost));
+    assert_eq!(h.depth(Sell), [(100, 8, 1)]);
+}
+
+#[test]
+fn invalid_amends_are_rejected_without_side_effects() {
+    let mut h = Harness::new();
+    h.limit(Buy, 100, 5); // 1
+    h.limit(Sell, 100, 5); // 2, fills 1
+    h.limit(Buy, 90, 5); // 3
+    let reject = |id, reason| {
+        [Event::Rejected {
+            id: Some(OrderId(id)),
+            reason,
+        }]
+    };
+    assert_eq!(h.amend(3, None, 0), reject(3, RejectReason::ZeroQuantity));
+    assert_eq!(
+        h.amend(3, None, u64::MAX),
+        reject(3, RejectReason::QuantityTooLarge)
+    );
+    assert_eq!(
+        h.amend(3, Some(0), 5),
+        reject(3, RejectReason::PriceOutOfRange)
+    );
+    assert_eq!(h.amend(3, None, 5), reject(3, RejectReason::AmendNoChange));
+    assert_eq!(
+        h.amend(3, Some(90), 5),
+        reject(3, RejectReason::AmendNoChange)
+    );
+    assert_eq!(h.amend(1, None, 2), reject(1, RejectReason::UnknownOrder));
+    assert_eq!(h.amend(42, None, 2), reject(42, RejectReason::UnknownOrder));
+    assert_eq!(h.queue(Buy, 90), [(3, 5)]);
+    let ev = h.limit(Buy, 1, 1);
+    assert!(matches!(
+        ev[0],
+        Event::Accepted {
+            id: OrderId(4),
+            seq: Seq(4),
+            ..
+        }
+    ));
+}
+
+#[test]
+fn apply_dispatches_like_the_direct_methods() {
+    let script = [
+        Command::Submit {
+            side: Sell,
+            kind: limit(101),
+            qty: Qty(5),
+        },
+        Command::Submit {
+            side: Buy,
+            kind: limit(99),
+            qty: Qty(5),
+        },
+        Command::Amend {
+            id: OrderId(2),
+            price: Some(Price(101)),
+            qty: Qty(7),
+        },
+        Command::Cancel { id: OrderId(2) },
+        Command::Submit {
+            side: Buy,
+            kind: OrderType::Market,
+            qty: Qty(1),
+        },
+    ];
+    let mut via_apply = MatchingEngine::new();
+    let mut a = Vec::new();
+    for cmd in script {
+        via_apply.apply(cmd, &mut a);
+    }
+
+    let mut h = Harness::new();
+    let mut b = Vec::new();
+    b.extend(h.limit(Sell, 101, 5));
+    b.extend(h.limit(Buy, 99, 5));
+    b.extend(h.amend(2, Some(101), 7));
+    b.extend(h.cancel(2));
+    b.extend(h.submit(Buy, OrderType::Market, 1));
+    assert_eq!(a, b);
 }
 
 // US-009 — invalid submissions

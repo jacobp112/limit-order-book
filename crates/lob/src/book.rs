@@ -177,6 +177,27 @@ impl OrderBook {
         Some((&self.arena.free(h)).into())
     }
 
+    /// Lowers a resting order's open quantity to `qty` without moving it.
+    ///
+    /// The caller guarantees `0 < qty < current open quantity`.
+    pub(crate) fn reduce(&mut self, id: OrderId, qty: Qty) {
+        let h = *self.index.get(&id).expect("reduce of resting order");
+        let (side, price, open) = {
+            let n = self.arena.get(h);
+            (n.side, n.price, n.open)
+        };
+        debug_assert!(!qty.is_zero() && qty < open);
+        let by = open.checked_sub(qty).expect("reduce lowers quantity");
+        let levels = match side {
+            Side::Buy => &mut self.bids,
+            Side::Sell => &mut self.asks,
+        };
+        levels
+            .get_mut(&price)
+            .expect("indexed order has a level")
+            .reduce(&mut self.arena, h, by);
+    }
+
     /// Trades an incoming order against the opposite side in price-time
     /// priority, emitting `Trade` and maker `Filled` events. Stops when
     /// `qty` is exhausted, the opposite side is empty, or the next level no
@@ -369,6 +390,19 @@ mod tests {
                 seq: Seq(1),
             }
         );
+    }
+
+    #[test]
+    fn reduce_keeps_queue_position() {
+        let mut b = book(&[(Side::Sell, 10, 5), (Side::Sell, 10, 5)]);
+        b.reduce(OrderId(1), Qty(2));
+        assert_eq!(b.depth(Side::Sell, 1), [summary(10, 7, 2)]);
+        let queue: Vec<_> = b
+            .level_orders(Side::Sell, Price(10))
+            .iter()
+            .map(|o| (o.id, o.qty))
+            .collect();
+        assert_eq!(queue, [(OrderId(1), Qty(2)), (OrderId(2), Qty(5))]);
     }
 
     #[test]

@@ -41,7 +41,7 @@ As a participant, I want to cancel my resting order.
 - The order leaves the book; the event reports the open quantity cancelled.
 - Cancelling an unknown, filled or already cancelled order is rejected with `UnknownOrder`.
 
-## US-008 — Amend order · todo
+## US-008 — Amend order · done
 As a participant, I want to change the price or open quantity of my resting order.
 - Reducing quantity at the same price keeps queue position.
 - Increasing quantity, or changing price, moves the order to the back of the queue.
