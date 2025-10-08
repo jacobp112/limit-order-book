@@ -2,6 +2,7 @@
 
 use crate::book::OrderBook;
 use crate::command::{CancelReason, Command, Event, Priority, RejectReason};
+use crate::snapshot::{Snapshot, SnapshotError};
 use crate::types::{OrderId, OrderType, Price, Qty, Seq, Side};
 
 /// A single-instrument matching engine.
@@ -36,6 +37,45 @@ impl MatchingEngine {
     #[must_use]
     pub fn book(&self) -> &OrderBook {
         &self.book
+    }
+
+    /// Rebuilds an engine from a snapshot.
+    ///
+    /// # Errors
+    ///
+    /// Returns why the snapshot does not describe a reachable state.
+    pub fn restore(snapshot: &Snapshot) -> Result<Self, SnapshotError> {
+        snapshot.validate()?;
+        let mut book = OrderBook::new();
+        // Priority order within each side, so FIFO order is rebuilt by appending.
+        for o in snapshot.bids.iter().chain(&snapshot.asks) {
+            book.insert(o.id, o.side, o.price, o.qty, o.seq);
+        }
+        Ok(Self {
+            book,
+            next_id: snapshot.next_id,
+            next_seq: snapshot.next_seq,
+        })
+    }
+
+    /// Canonical copy of the current state.
+    #[must_use]
+    pub fn snapshot(&self) -> Snapshot {
+        Snapshot {
+            next_id: self.next_id,
+            next_seq: self.next_seq,
+            bids: self.book.resting(Side::Buy),
+            asks: self.book.resting(Side::Sell),
+        }
+    }
+
+    /// Applies commands in order, returning all resulting events.
+    pub fn replay(&mut self, commands: impl IntoIterator<Item = Command>) -> Vec<Event> {
+        let mut out = Vec::new();
+        for cmd in commands {
+            self.apply(cmd, &mut out);
+        }
+        out
     }
 
     /// Applies one command, appending the resulting events to `out`.

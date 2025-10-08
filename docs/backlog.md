@@ -48,7 +48,7 @@ As a participant, I want to change the price or open quantity of my resting orde
 - A new price that crosses trades immediately; any remainder rests.
 - Amending to zero, or to the current values, is rejected.
 
-## US-009 — Safe rejection of invalid commands · doing
+## US-009 — Safe rejection of invalid commands · done
 As an operator, I want invalid commands rejected without side effects.
 - Each invalid command yields one `Rejected` event with a specific reason.
 - The book snapshot is byte-identical before and after.
@@ -58,12 +58,12 @@ As a participant, I want to see top of book and depth.
 - Best bid and ask, and per-level totals in price order, are available.
 - Per-order detail (id, quantity) is available in queue order for each level.
 
-## US-011 — Deterministic replay · todo
+## US-011 — Deterministic replay · done
 As a developer, I want to replay a recorded command journal and get identical results.
 - Replaying a journal twice yields identical events and identical snapshot bytes.
 - A CLI prints the events and the state digest for a journal file.
 
-## US-012 — Snapshot and restore · todo
+## US-012 — Snapshot and restore · done
 As a developer, I want to restore a snapshot and continue from it.
 - Replaying E1 then E2 equals restoring the snapshot after E1, then replaying E2.
 

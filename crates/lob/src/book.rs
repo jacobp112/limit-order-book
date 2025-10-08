@@ -139,6 +139,22 @@ impl OrderBook {
             })
     }
 
+    /// Every resting order on `side`, best price first and in time priority
+    /// within each price.
+    #[must_use]
+    pub fn resting(&self, side: Side) -> Vec<RestingOrder> {
+        let level_orders = |level: &Level| {
+            level
+                .iter(&self.arena)
+                .map(|h| RestingOrder::from(self.arena.get(h)))
+                .collect::<Vec<_>>()
+        };
+        match side {
+            Side::Buy => self.bids.values().rev().flat_map(level_orders).collect(),
+            Side::Sell => self.asks.values().flat_map(level_orders).collect(),
+        }
+    }
+
     /// Places a new order at the back of its price level.
     ///
     /// The caller guarantees `id` is not already resting and that price and

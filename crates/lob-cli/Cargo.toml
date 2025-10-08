@@ -1,0 +1,20 @@
+[package]
+name = "lob-cli"
+description = "Command-line replay for the lob matching engine"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish = false
+
+[[bin]]
+name = "lob"
+path = "src/main.rs"
+# Shares its name with the library; the library's docs are the ones wanted.
+doc = false
+
+[dependencies]
+lob = { path = "../lob" }
+
+[lints]
+workspace = true

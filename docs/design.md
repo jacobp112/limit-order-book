@@ -4,7 +4,8 @@
 
 ```
 crates/lob        core library, no runtime dependencies
-crates/lob-cli    journal replay and latency harness          (planned)
+crates/lob-cli    `lob replay`; latency harness                (harness planned)
+examples/         sample journals
 crates/lob-wasm   C-ABI wrapper used by the visual explainer  (planned)
 fuzz/             cargo-fuzz targets, outside the workspace   (planned)
 explainer/        static page driven by lob-wasm              (planned)
@@ -20,9 +21,9 @@ Core modules:
 | `level` | one price level: an intrusive FIFO list over the order arena |
 | `book` | both sides, the order arena and the id index |
 | `engine` | validation, matching, event emission, id/sequence counters |
-| `journal` | line-based text encoding of commands |
-| `snapshot` | canonical state encoding, digest, restore |
-| `invariants` | structural checks used by tests and fuzzing |
+| `journal` | line-based text encoding of commands; stable text form of events |
+| `snapshot` | canonical state encoding, digest, validation for restore |
+| `invariants` | structural checks used by tests and fuzzing (planned) |
 
 ## Data structures
 
@@ -82,7 +83,21 @@ sequence numbers come from counters inside that state. There is no clock,
 randomness, concurrency or iteration over unordered collections on the path
 that produces events or snapshots.
 
-A snapshot lists, for each side in price order and each level in FIFO order,
-every resting order with its id, price, open quantity and sequence number,
-followed by both counters. Its canonical byte encoding is compared directly in
-tests; a 64-bit FNV-1a digest is provided for compact reporting.
+A snapshot holds both counters and, for each side in price order and each
+level in FIFO order, every resting order with its id, price, open quantity
+and sequence number. That is all state that affects future output, so two
+engines with equal snapshots behave identically. Its canonical byte encoding
+(little-endian, fixed field order) is compared directly in tests; a 64-bit
+FNV-1a digest is provided for compact reporting.
+
+`MatchingEngine::restore` validates a snapshot before using it (counters,
+value ranges, ids and sequence numbers already issued, no duplicates,
+priority order, uncrossed), so bytes from outside cannot build a book the
+engine could not have reached. Tests check:
+
+- replaying the same journal twice gives identical events and snapshot bytes;
+- `replay(S, E1 ++ E2) == replay(restore(snapshot(replay(S, E1))), E2)` at
+  several split points;
+- every intermediate snapshot decodes and restores to the same bytes;
+- pinned digests for a 20,000-command generated stream, so CI on Linux and
+  Windows must agree.

@@ -17,6 +17,16 @@ Work in progress. See:
 cargo test --workspace
 ```
 
+## Replay a journal
+
+```
+cargo run -p lob-cli -- replay examples/journals/session.journal
+```
+
+Prints each command with its events, then the event and state digests.
+`--save <file>` writes the final snapshot and `--from <file>` starts from
+one; `--quiet` prints only the summary.
+
 ## License
 
 Licensed under either of [Apache License, Version 2.0](LICENSE-APACHE) or
