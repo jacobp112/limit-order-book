@@ -9,6 +9,7 @@
 pub mod book;
 pub mod command;
 pub mod engine;
+pub mod invariants;
 pub mod journal;
 mod level;
 pub mod snapshot;

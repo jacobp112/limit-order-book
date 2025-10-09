@@ -157,6 +157,45 @@ impl Level {
             .expect("level total covers its orders");
     }
 
+    /// Walks the queue checking that `prev` links mirror `next` links and
+    /// that the walk ends at `tail`, visiting at most `max` nodes so a
+    /// corrupted (cyclic) list cannot loop forever. Returns the handles.
+    pub(crate) fn walk_checked(
+        &self,
+        arena: &Arena,
+        max: usize,
+    ) -> Result<Vec<Handle>, &'static str> {
+        let mut out = Vec::new();
+        let mut prev = None;
+        let mut cur = self.head;
+        while let Some(h) = cur {
+            if out.len() >= max {
+                return Err("queue longer than the number of indexed orders (cycle?)");
+            }
+            let node = arena.get(h);
+            if node.prev != prev {
+                return Err("prev link does not match traversal order");
+            }
+            out.push(h);
+            prev = Some(h);
+            cur = node.next;
+        }
+        if prev != self.tail {
+            return Err("tail does not match last node");
+        }
+        Ok(out)
+    }
+
+    #[cfg(test)]
+    pub(crate) fn corrupt_total(&mut self, total: Qty) {
+        self.total = total;
+    }
+
+    #[cfg(test)]
+    pub(crate) fn corrupt_tail(&mut self, tail: Option<Handle>) {
+        self.tail = tail;
+    }
+
     /// Iterates handles from head (oldest) to tail.
     pub(crate) fn iter<'a>(&self, arena: &'a Arena) -> LevelIter<'a> {
         LevelIter {

@@ -23,7 +23,7 @@ Core modules:
 | `engine` | validation, matching, event emission, id/sequence counters |
 | `journal` | line-based text encoding of commands; stable text form of events |
 | `snapshot` | canonical state encoding, digest, validation for restore |
-| `invariants` | structural checks used by tests and fuzzing (planned) |
+| `invariants` | `Auditor`: event-derived ledger reconciled with the book (I1–I3, I9, I10) |
 
 ## Data structures
 
@@ -101,3 +101,22 @@ engine could not have reached. Tests check:
 - every intermediate snapshot decodes and restores to the same bytes;
 - pinned digests for a 20,000-command generated stream, so CI on Linux and
   Windows must agree.
+
+## Invariant checking
+
+Two independent checks cover the invariants in `requirements.md`:
+
+- `OrderBook::check_structure` walks the book's internals: cached level
+  totals and counts, doubly linked list consistency (with a bounded walk so a
+  corrupted cycle is reported rather than looping), index/level agreement,
+  positive open quantity, FIFO sequence order and an uncrossed book (I4–I8).
+- `invariants::Auditor` rebuilds per-order accepted, filled and cancelled
+  quantities purely from commands and events, checks trade prices and
+  priority as they stream past (I2, I3, I9, I10), and reconciles against the
+  open quantity the *book* reports: `A = F + O + C` (I1).
+
+The auditor does not read engine internals, so a bookkeeping error in the
+engine cannot also mask itself. Tests show both checks reject deliberately
+corrupted books and forged event streams, and a trade-price bug injected
+into the matching loop is caught on the fourth command of a generated
+stream.

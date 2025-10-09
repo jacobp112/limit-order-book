@@ -67,7 +67,7 @@ As a developer, I want to replay a recorded command journal and get identical re
 As a developer, I want to restore a snapshot and continue from it.
 - Replaying E1 then E2 equals restoring the snapshot after E1, then replaying E2.
 
-## US-013 — Conservation under randomised flow · todo
+## US-013 — Conservation under randomised flow · doing
 As the maintainer, I want long random command streams checked against the invariants.
 - Streams mix limit, market, IOC, cancel and amend commands.
 - Invariants I1–I10 hold after every command.

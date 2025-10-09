@@ -6,6 +6,7 @@ use std::collections::hash_map::DefaultHasher;
 use std::hash::BuildHasherDefault;
 
 use crate::command::Event;
+use crate::invariants::Violation;
 use crate::level::{Arena, Handle, Level, Node};
 use crate::types::{OrderId, Price, Qty, Seq, Side};
 
@@ -276,6 +277,90 @@ impl OrderBook {
         remaining
     }
 
+    /// Checks the book's internal structure: invariants I4–I8.
+    ///
+    /// Costs O(resting orders); intended for tests and fuzzing.
+    ///
+    /// # Errors
+    ///
+    /// Returns the first violation found.
+    pub fn check_structure(&self) -> Result<(), Violation> {
+        let mut linked = 0usize;
+        for (side, levels) in [(Side::Buy, &self.bids), (Side::Sell, &self.asks)] {
+            for (&price, level) in levels {
+                let at = || format!("{side} level {price}");
+                let handles = level
+                    .walk_checked(&self.arena, self.index.len())
+                    .map_err(|why| Violation::new("I4", format!("{}: {why}", at())))?;
+                if handles.is_empty() {
+                    return Err(Violation::new("I4", format!("{}: empty level kept", at())));
+                }
+                let mut total = 0u128;
+                let mut prev_seq: Option<Seq> = None;
+                for &h in &handles {
+                    let n = self.arena.get(h);
+                    if n.side != side || n.price != price {
+                        return Err(Violation::new(
+                            "I5",
+                            format!("{}: order {} records {} {}", at(), n.id, n.side, n.price),
+                        ));
+                    }
+                    if self.index.get(&n.id) != Some(&h) {
+                        return Err(Violation::new(
+                            "I5",
+                            format!("{}: order {} not indexed at its slot", at(), n.id),
+                        ));
+                    }
+                    if n.open.is_zero() {
+                        return Err(Violation::new(
+                            "I6",
+                            format!("{}: order {} has zero open", at(), n.id),
+                        ));
+                    }
+                    if prev_seq.is_some_and(|p| p >= n.seq) {
+                        return Err(Violation::new(
+                            "I7",
+                            format!("{}: order {} seq {} out of FIFO order", at(), n.id, n.seq.0),
+                        ));
+                    }
+                    prev_seq = Some(n.seq);
+                    total = total.saturating_add(u128::from(n.open.0));
+                }
+                if total != u128::from(level.total().0) || handles.len() != level.count() as usize {
+                    return Err(Violation::new(
+                        "I4",
+                        format!(
+                            "{}: cached total/count {}/{} but orders sum to {total}/{}",
+                            at(),
+                            level.total(),
+                            level.count(),
+                            handles.len()
+                        ),
+                    ));
+                }
+                linked = linked.saturating_add(handles.len());
+            }
+        }
+        if linked != self.index.len() {
+            return Err(Violation::new(
+                "I5",
+                format!(
+                    "{} orders indexed but {linked} linked into levels",
+                    self.index.len()
+                ),
+            ));
+        }
+        if let (Some(bid), Some(ask)) = (self.best_bid(), self.best_ask())
+            && bid >= ask
+        {
+            return Err(Violation::new(
+                "I8",
+                format!("crossed: bid {bid} >= ask {ask}"),
+            ));
+        }
+        Ok(())
+    }
+
     fn levels(&self, side: Side) -> &BTreeMap<Price, Level> {
         match side {
             Side::Buy => &self.bids,
@@ -419,6 +504,81 @@ mod tests {
             .map(|o| (o.id, o.qty))
             .collect();
         assert_eq!(queue, [(OrderId(1), Qty(2)), (OrderId(2), Qty(5))]);
+    }
+
+    mod structure {
+        use super::*;
+
+        fn sample() -> OrderBook {
+            book(&[
+                (Side::Buy, 99, 5),
+                (Side::Buy, 99, 3),
+                (Side::Buy, 98, 1),
+                (Side::Sell, 101, 4),
+            ])
+        }
+
+        fn violated(b: &OrderBook) -> &'static str {
+            b.check_structure().unwrap_err().invariant
+        }
+
+        #[test]
+        fn healthy_book_passes() {
+            assert_eq!(sample().check_structure(), Ok(()));
+            assert_eq!(OrderBook::new().check_structure(), Ok(()));
+        }
+
+        #[test]
+        fn stale_level_total_is_i4() {
+            let mut b = sample();
+            b.bids.get_mut(&Price(99)).unwrap().corrupt_total(Qty(9));
+            assert_eq!(violated(&b), "I4");
+        }
+
+        #[test]
+        fn broken_tail_link_is_i4() {
+            let mut b = sample();
+            b.bids.get_mut(&Price(99)).unwrap().corrupt_tail(None);
+            assert_eq!(violated(&b), "I4");
+        }
+
+        #[test]
+        fn unindexed_order_is_i5() {
+            let mut b = sample();
+            b.index.remove(&OrderId(2));
+            assert_eq!(violated(&b), "I5");
+        }
+
+        #[test]
+        fn order_recording_wrong_price_is_i5() {
+            let mut b = sample();
+            let h = b.index[&OrderId(3)];
+            b.arena.get_mut(h).price = Price(97);
+            assert_eq!(violated(&b), "I5");
+        }
+
+        #[test]
+        fn zero_open_order_is_i6() {
+            let mut b = sample();
+            let h = b.index[&OrderId(3)];
+            b.arena.get_mut(h).open = Qty::ZERO;
+            assert_eq!(violated(&b), "I6");
+        }
+
+        #[test]
+        fn fifo_sequence_inversion_is_i7() {
+            let mut b = sample();
+            let h = b.index[&OrderId(2)];
+            b.arena.get_mut(h).seq = Seq(1);
+            assert_eq!(violated(&b), "I7");
+        }
+
+        #[test]
+        fn crossed_book_is_i8() {
+            let mut b = sample();
+            b.insert(OrderId(9), Side::Sell, Price(99), Qty(1), Seq(9));
+            assert_eq!(violated(&b), "I8");
+        }
     }
 
     #[test]
