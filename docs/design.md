@@ -90,8 +90,8 @@ engines with equal snapshots behave identically. Its canonical byte encoding
 (little-endian, fixed field order) is compared directly in tests; a 64-bit
 FNV-1a digest is provided for compact reporting.
 
-`MatchingEngine::restore` validates a snapshot before using it (counters,
-value ranges, ids and sequence numbers already issued, no duplicates,
+`MatchingEngine::restore` validates a snapshot before using it (counters in
+`1..=2^63`, so a restored engine is never close to exhausting them; value ranges, ids and sequence numbers already issued, no duplicates,
 priority order, uncrossed), so bytes from outside cannot build a book the
 engine could not have reached. Tests check:
 

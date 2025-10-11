@@ -18,6 +18,14 @@ use crate::book::RestingOrder;
 use crate::types::{OrderId, Price, Qty, Seq, Side};
 
 const MAGIC: &[u8; 8] = b"LOBSNAP1";
+
+/// Largest `next_id` / `next_seq` a snapshot may carry.
+///
+/// The engine panics if a counter would pass `u64::MAX`. From an empty book
+/// that needs 2^64 commands; bounding restored counters at 2^63 keeps it at
+/// least 2^63 commands away (centuries at 10^9 commands per second), so a
+/// snapshot cannot place the engine one command from a panic.
+pub const MAX_COUNTER: u64 = 1 << 63;
 const ORDER_BYTES: usize = 32;
 
 /// Engine state in canonical form.
@@ -42,8 +50,8 @@ pub enum SnapshotError {
     Truncated,
     /// Input continued after the last order.
     TrailingBytes,
-    /// `next_id` or `next_seq` is zero.
-    ZeroCounter,
+    /// `next_id` or `next_seq` is zero or above [`MAX_COUNTER`].
+    CounterOutOfRange,
     /// An order is listed under the wrong side.
     WrongSide(OrderId),
     /// Price outside `1..=MAX_PRICE`.
@@ -68,7 +76,7 @@ impl fmt::Display for SnapshotError {
             Self::BadMagic => f.write_str("not a snapshot (bad header)"),
             Self::Truncated => f.write_str("snapshot is truncated"),
             Self::TrailingBytes => f.write_str("unexpected bytes after snapshot"),
-            Self::ZeroCounter => f.write_str("id and sequence counters must start at 1"),
+            Self::CounterOutOfRange => f.write_str("id and sequence counters must be in 1..=2^63"),
             Self::WrongSide(id) => write!(f, "order {id} listed on the wrong side"),
             Self::PriceOutOfRange(id) => write!(f, "order {id} has an invalid price"),
             Self::QuantityOutOfRange(id) => write!(f, "order {id} has an invalid quantity"),
@@ -144,8 +152,9 @@ impl Snapshot {
     ///
     /// Returns the first problem found.
     pub fn validate(&self) -> Result<(), SnapshotError> {
-        if self.next_id == 0 || self.next_seq == 0 {
-            return Err(SnapshotError::ZeroCounter);
+        let counter_ok = |c| (1..=MAX_COUNTER).contains(&c);
+        if !counter_ok(self.next_id) || !counter_ok(self.next_seq) {
+            return Err(SnapshotError::CounterOutOfRange);
         }
         let mut ids = BTreeSet::new();
         for (side, orders) in [(Side::Buy, &self.bids), (Side::Sell, &self.asks)] {
@@ -326,6 +335,27 @@ mod tests {
         assert_eq!(Snapshot::decode(&long), Err(SnapshotError::TrailingBytes));
     }
 
+    /// Regression: found by the `snapshot` fuzz target. An empty snapshot
+    /// with `next_seq = u64::MAX` was accepted, and the next command panicked
+    /// with "sequence space exhausted".
+    #[test]
+    fn counters_at_the_bound_restore_and_keep_working() {
+        let mut s = sample();
+        s.next_id = MAX_COUNTER;
+        s.next_seq = MAX_COUNTER;
+        assert_eq!(s.validate(), Ok(()));
+        let empty = Snapshot {
+            next_id: MAX_COUNTER,
+            next_seq: MAX_COUNTER,
+            bids: vec![],
+            asks: vec![],
+        };
+        let mut engine = crate::MatchingEngine::restore(&empty).unwrap();
+        let mut out = Vec::new();
+        engine.submit(Side::Buy, crate::OrderType::Market, Qty(1), &mut out);
+        assert!(matches!(out[0], crate::Event::Accepted { .. }));
+    }
+
     #[test]
     fn huge_order_count_fails_without_allocating() {
         let mut bytes = MAGIC.to_vec();
@@ -345,7 +375,9 @@ mod tests {
             assert_eq!(Snapshot::decode(&s.encode()), Err(expected));
         };
         assert_eq!(sample().validate(), Ok(()));
-        check(|s| s.next_id = 0, E::ZeroCounter);
+        check(|s| s.next_id = 0, E::CounterOutOfRange);
+        check(|s| s.next_seq = MAX_COUNTER + 1, E::CounterOutOfRange);
+        check(|s| s.next_id = u64::MAX, E::CounterOutOfRange);
         // Side is implied by section in the encoding, so this only arises for
         // snapshots built in memory.
         let mut s = sample();

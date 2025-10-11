@@ -72,6 +72,19 @@ fn command_harness_survives_random_bytes() {
     }
 }
 
+/// Inputs that once crashed a fuzz target; each file is named after the bug.
+#[test]
+fn snapshot_regressions() {
+    let dir = Path::new(env!("CARGO_MANIFEST_DIR")).join("seeds/snapshot");
+    let mut n = 0;
+    for entry in fs::read_dir(dir).unwrap() {
+        let path = entry.unwrap().path();
+        lob_fuzz::snapshot_bytes(&fs::read(&path).unwrap());
+        n += 1;
+    }
+    assert!(n > 0);
+}
+
 #[test]
 fn snapshot_harness_on_real_and_corrupted_snapshots() {
     let mut rng = XorShift(0xdead_beef_cafe_f00d);

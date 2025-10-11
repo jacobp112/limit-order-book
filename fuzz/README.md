@@ -34,4 +34,11 @@ exist, hence the `mkdir`. Replace `journal` with `commands` or `snapshot`
 (those have no seed directory, so drop `seeds/journal`). `corpus/` and `artifacts/` are ignored by Git. A crash is saved
 under `artifacts/<target>/`; reproduce it with
 `cargo fuzz run --features libfuzzer <target> artifacts/<target>/<file>`.
+Inputs that once crashed are kept under `seeds/<target>/`, named after the
+bug, and replayed by `cargo test`.
 
+## Findings
+
+| Target | Input | Problem | Fix |
+|---|---|---|---|
+| `snapshot` | `seeds/snapshot/seq-counter-at-u64-max.bin`, found after ~126k executions | An empty snapshot with `next_seq = u64::MAX` passed validation; the first command after restore panicked with "sequence space exhausted" | `Snapshot::validate` bounds both counters to `1..=2^63` (`MAX_COUNTER`), so a restored engine is as far from counter exhaustion as a fresh one |
