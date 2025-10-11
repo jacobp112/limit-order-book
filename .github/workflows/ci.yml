@@ -23,3 +23,5 @@ jobs:
       - run: cargo fmt --all --check
       - run: cargo clippy --workspace --all-targets
       - run: cargo test --workspace
+      - name: fuzz harness (stable, seed corpus)
+        run: cargo test --release --manifest-path fuzz/Cargo.toml

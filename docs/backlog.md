@@ -74,7 +74,7 @@ As the maintainer, I want long random command streams checked against the invari
 - Results match a simple reference implementation exactly.
 - A failure prints a minimal reproducing journal.
 
-## US-014 — Hostile input fuzzing · todo
+## US-014 — Hostile input fuzzing · done
 As the maintainer, I want fuzzed command streams to never crash or corrupt state.
 - Fuzz targets cover structured commands and the journal parser.
 - Invariants are checked after every command.

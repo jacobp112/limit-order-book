@@ -1,0 +1,8 @@
+submit buy market 5
+submit sell ioc 100 5
+submit buy limit 100 3
+submit buy limit 98 3
+submit sell ioc 99 5
+submit sell market 5
+submit sell limit 110 2
+submit buy market 2

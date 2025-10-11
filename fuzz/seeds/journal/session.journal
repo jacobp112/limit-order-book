@@ -1,0 +1,13 @@
+# A short session: build a book, cross it, amend and cancel.
+submit sell limit 101 5
+submit sell limit 102 5
+submit sell limit 101 3
+submit buy limit 99 4
+submit buy limit 100 2
+submit buy limit 101 7        # takes order 1, part of order 3
+amend 4 - 2                   # same-price decrease keeps priority
+amend 5 100 6                 # same-price increase moves to the back
+submit sell ioc 99 10         # hits 100 then 99, remainder cancelled
+submit buy market 3           # sweeps 101 and 102
+cancel 2
+cancel 2                      # already cancelled: rejected

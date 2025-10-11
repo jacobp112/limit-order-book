@@ -1,0 +1,28 @@
+# Hand-written seed of awkward sequences for the journal fuzz target.
+submit buy limit 1000000000 1000000000
+submit sell limit 1 1000000000
+submit sell market 1000000000
+submit buy limit 0 5
+submit buy limit -9223372036854775808 1
+submit sell ioc 9223372036854775807 1
+submit buy market 0
+submit buy market 18446744073709551615
+cancel 0
+cancel 18446744073709551615
+cancel 1
+cancel 1
+submit buy limit 100 10
+submit sell limit 100 4
+amend 5 - 6
+amend 5 - 6
+amend 5 - 0
+amend 5 99 6
+amend 5 101 6
+submit sell limit 101 6
+amend 5 - 1
+cancel 5
+submit sell limit 100 3
+submit sell limit 100 3
+amend 9 100 3
+amend 8 - 2
+submit buy ioc 100 100

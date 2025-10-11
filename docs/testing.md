@@ -42,8 +42,14 @@ agreement with it means something.
 PROPTEST_CASES=5000 cargo test --release -p lob --test properties
 ```
 
-Fuzzing uses `cargo-fuzz` (libFuzzer) with `arbitrary`. libFuzzer's Windows
-support is experimental, so fuzzing is run in a Linux container.
+## Fuzzing
+
+Fuzzing uses `cargo-fuzz` (libFuzzer) with `arbitrary`, in `fuzz/`, outside
+the main workspace. Targets cover structured command streams, the journal
+parser and the snapshot decoder; every accepted input is run under the full
+invariant audit. libFuzzer's Windows support is experimental, so fuzzing runs
+in a Linux container; the harness logic is also exercised on stable by
+`cargo test` in `fuzz/`. See `fuzz/README.md` for targets and commands.
 
 Scenario files (`crates/lob/tests/scenarios/*.scn`) interleave journal
 commands with the exact events expected and, optionally, the whole book as a

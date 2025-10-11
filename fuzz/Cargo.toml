@@ -1,0 +1,46 @@
+[package]
+name = "lob-fuzz"
+version = "0.0.0"
+edition = "2024"
+license = "MIT OR Apache-2.0"
+publish = false
+
+[package.metadata]
+cargo-fuzz = true
+
+# Kept out of the main workspace: fuzzing needs nightly and libFuzzer.
+[workspace]
+
+[dependencies]
+lob = { path = "../crates/lob" }
+arbitrary = { version = "1", features = ["derive"] }
+libfuzzer-sys = { version = "0.4", optional = true }
+
+[features]
+# Enabled by cargo-fuzz builds; without it the harness is a plain library
+# that the seed-corpus test and `cargo check` can use on stable.
+libfuzzer = ["dep:libfuzzer-sys"]
+
+[[bin]]
+name = "commands"
+path = "fuzz_targets/commands.rs"
+test = false
+doc = false
+bench = false
+required-features = ["libfuzzer"]
+
+[[bin]]
+name = "journal"
+path = "fuzz_targets/journal.rs"
+test = false
+doc = false
+bench = false
+required-features = ["libfuzzer"]
+
+[[bin]]
+name = "snapshot"
+path = "fuzz_targets/snapshot.rs"
+test = false
+doc = false
+bench = false
+required-features = ["libfuzzer"]

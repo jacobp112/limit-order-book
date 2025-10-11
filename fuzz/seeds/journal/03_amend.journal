@@ -1,0 +1,11 @@
+submit buy limit 100 10
+submit buy limit 100 10
+submit sell limit 103 6
+amend 1 - 6
+amend 1 - 8
+amend 2 104 10
+submit sell limit 104 1
+amend 2 - 3
+amend 2 - 1
+cancel 3
+amend 4 - 1

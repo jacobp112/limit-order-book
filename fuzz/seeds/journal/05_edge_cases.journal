@@ -1,0 +1,12 @@
+submit sell limit 50 2
+submit buy limit 50 1
+submit sell limit 50 4
+amend 1 - 5
+submit buy limit 50 9
+submit sell limit 50 1
+submit sell limit 51 1
+submit buy limit 40 2
+amend 7 60 2
+submit buy limit 30 1
+submit sell limit 35 1
+amend 9 31 1

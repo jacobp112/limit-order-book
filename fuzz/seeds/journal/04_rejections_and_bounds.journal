@@ -1,0 +1,16 @@
+submit buy limit 100 0
+submit buy limit 0 5
+submit buy limit -1 5
+submit buy limit 1000000001 5
+submit sell market 1000000001
+submit sell ioc 0 0
+submit sell limit 1000000000 1000000000
+submit buy limit 1 1000000000
+cancel 0
+cancel 18446744073709551615
+cancel 1
+cancel 1
+amend 2 - 0
+amend 2 0 5
+amend 2 - 1000000001
+amend 2 1 1000000000
