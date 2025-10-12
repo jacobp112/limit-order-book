@@ -4,10 +4,11 @@
 
 ```
 crates/lob        core library, no runtime dependencies
-crates/lob-cli    `lob replay`; latency harness                (harness planned)
+crates/lob-cli    `lob replay`
+crates/lob-bench  deterministic workloads and Criterion benches
+fuzz/             cargo-fuzz targets, outside the workspace
 examples/         sample journals
 crates/lob-wasm   C-ABI wrapper used by the visual explainer  (planned)
-fuzz/             cargo-fuzz targets, outside the workspace   (planned)
 explainer/        static page driven by lob-wasm              (planned)
 tools/            benchmark plotting                          (planned)
 ```
@@ -90,10 +91,11 @@ engines with equal snapshots behave identically. Its canonical byte encoding
 (little-endian, fixed field order) is compared directly in tests; a 64-bit
 FNV-1a digest is provided for compact reporting.
 
-`MatchingEngine::restore` validates a snapshot before using it (counters in
-`1..=2^63`, so a restored engine is never close to exhausting them; value ranges, ids and sequence numbers already issued, no duplicates,
-priority order, uncrossed), so bytes from outside cannot build a book the
-engine could not have reached. Tests check:
+`MatchingEngine::restore` validates a snapshot before using it: counters in
+`1..=2^63` (so a restored engine is never close to exhausting them), value
+ranges, ids and sequence numbers already issued, no duplicates, priority
+order and an uncrossed book. Bytes from outside therefore cannot build a book
+the engine could not have reached. Tests check:
 
 - replaying the same journal twice gives identical events and snapshot bytes;
 - `replay(S, E1 ++ E2) == replay(restore(snapshot(replay(S, E1))), E2)` at

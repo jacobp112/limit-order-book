@@ -67,10 +67,31 @@ cargo test --workspace
 
 ## Benchmarks
 
-Criterion measures resting insertion, crossing orders, cancellation,
-amendment, partial-fill-heavy matching, multi-level sweeps and mixed synthetic
-flow, with warm-up and repeated samples. Workloads are generated from a fixed
-seed.
+Workloads live in `crates/lob-bench` so the library carries no benchmark
+code. Each is a starting snapshot plus a fixed command batch built from a
+fixed seed; the benchmark restores the snapshot outside the timed region and
+times the batch. Unit tests check that each workload does what its name says
+(for example, `cross` produces exactly one full fill per order and `amend`
+exactly 500 kept and 500 lost priorities), so a generator mistake cannot
+silently change what is measured.
+
+| Workload | Batch | Starting book |
+|---|---|---|
+| `rest_insert` | 1,000 non-crossing limits joining existing levels | 100 levels × 10 orders per side |
+| `cross` | 1,000 limits, each fully filling one maker | 10,000 one-lot asks over 100 levels |
+| `cancel` | 1,000 cancels of distinct random orders | 20,000 resting, 100 per level |
+| `amend` | 1,000 amends: 500 size-down in place, 500 re-price | 20,000 resting |
+| `partial_fill` | 1,000 small takers partially filling one large maker | 10 large asks at one level |
+| `sweep` | 100 market orders, each taking 10 levels (50 fills) | 1,000 levels × 5 orders |
+| `mixed` | 10,000 commands of mixed flow | state after 20,000 commands of the same flow |
+
+```
+cargo bench -p lob-bench --bench engine
+```
+
+Criterion uses 2 s warm-up, 10 s measurement and 50 samples per workload,
+and reports time per batch with a confidence interval and throughput per
+command.
 
 Criterion times batches, so a separate harness records per-operation latency
 for median, p95 and p99. On Windows the timer resolution is about 100 ns, so
