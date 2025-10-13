@@ -9,7 +9,15 @@
 | Invariants | `tests/invariants.rs` | I1–I10 after every command of generated streams; forged events are rejected |
 | Property | `tests/properties.rs` (proptest) | differential check against a naive reference model plus I1–I10, on generated streams |
 | Fuzz | `fuzz/` (cargo-fuzz) | hostile and malformed streams; run separately, not in `cargo test` |
-| Benchmark | `crates/lob/benches/` (Criterion) and a latency harness | performance characteristics |
+| Benchmark | `crates/lob-bench` (Criterion and a latency harness) | performance characteristics; see [benchmarks.md](benchmarks.md) |
+
+## Scenario tests
+
+Scenario files (`crates/lob/tests/scenarios/*.scn`) interleave journal
+commands with the exact events expected and, optionally, the whole book as a
+price ladder afterwards; the format is described in `tests/scenarios.rs`. A
+mismatch reports the line, both event lists and the journal prefix that
+reproduces it. Edge cases found during development become scenario tests.
 
 ## Property tests
 
@@ -51,12 +59,6 @@ invariant audit. libFuzzer's Windows support is experimental, so fuzzing runs
 in a Linux container; the harness logic is also exercised on stable by
 `cargo test` in `fuzz/`. See `fuzz/README.md` for targets and commands.
 
-Scenario files (`crates/lob/tests/scenarios/*.scn`) interleave journal
-commands with the exact events expected and, optionally, the whole book as a
-price ladder afterwards; the format is described in `tests/scenarios.rs`. A
-mismatch reports the line, both event lists and the journal prefix that
-reproduces it. Edge cases found during development become scenario tests.
-
 Quality gates before every commit:
 
 ```
@@ -93,8 +95,7 @@ Criterion uses 2 s warm-up, 10 s measurement and 50 samples per workload,
 and reports time per batch with a confidence interval and throughput per
 command.
 
-Criterion times batches, so a separate harness records per-operation latency
-for median, p95 and p99. On Windows the timer resolution is about 100 ns, so
-the harness times small fixed batches and reports per-operation means of those
-batches; this is stated alongside every result. Hardware, build profile,
-workload, sample size and commit are recorded with each published run.
+Criterion times batches, so a separate harness (`--bin latency`) records
+the latency distribution from timed chunks of consecutive commands; the
+timer resolution and overhead are measured and recorded with each run.
+Method, conditions, results and caveats are in [benchmarks.md](benchmarks.md).

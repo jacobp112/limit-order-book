@@ -79,12 +79,12 @@ As the maintainer, I want fuzzed command streams to never crash or corrupt state
 - Fuzz targets cover structured commands and the journal parser.
 - Invariants are checked after every command.
 
-## US-015 — Reproducible benchmarks · todo
+## US-015 — Reproducible benchmarks · done
 As a reviewer, I want to reproduce the performance figures.
 - One documented command runs the suite and writes machine-readable results.
 - Hardware, build profile, workload and sample sizes are recorded.
 
-## US-016 — Latency charts · todo
+## US-016 — Latency charts · done
 As a reviewer, I want latency distributions shown as charts.
 - A script renders median, p95 and p99 from the benchmark output.
 

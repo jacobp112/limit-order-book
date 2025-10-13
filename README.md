@@ -9,6 +9,7 @@ Work in progress. See:
 - [Requirements, invariants and error semantics](docs/requirements.md)
 - [Design and data structures](docs/design.md)
 - [Testing and benchmark strategy](docs/testing.md)
+- [Benchmark results and method](docs/benchmarks.md)
 - [Backlog](docs/backlog.md)
 
 ## Build

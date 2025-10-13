@@ -1,0 +1,148 @@
+{
+  "schema": 1,
+  "sample_definition": "mean ns per command over a timed chunk of consecutive commands",
+  "machine": "Intel Core i5-9300H (4C/8T, 2.4 GHz base), 7.8 GB RAM, Windows 11 Home 10.0.26200, AC power, Balanced power mode, 7 idle Docker containers",
+  "commit": "bb867153fe13",
+  "os": "windows",
+  "arch": "x86_64",
+  "logical_cpus": 8,
+  "profile": "release",
+  "timer_resolution_ns": 100,
+  "timer_overhead_ns": 95,
+  "warmup_rounds": 3,
+  "workloads": [
+    {
+      "name": "rest_insert",
+      "description": "non-crossing limit joins an existing level (100 levels x 10 orders per side)",
+      "commands_per_round": 1000,
+      "chunk": 16,
+      "runs": 5,
+      "samples_per_run": 3150,
+      "p50_ns": 212.5,
+      "p95_ns": 362.5,
+      "p99_ns": 5506.2,
+      "max_ns": 80793.8,
+      "p50_min_ns": 206.2,
+      "p50_max_ns": 212.5,
+      "criterion_mean_ns": 295.32220955362993,
+      "criterion_ci_ns": [
+        282.58572034969546,
+        309.6785115943111
+      ]
+    },
+    {
+      "name": "cross",
+      "description": "crossing limit fully fills exactly one maker (10,000 one-lot asks)",
+      "commands_per_round": 1000,
+      "chunk": 16,
+      "runs": 5,
+      "samples_per_run": 3150,
+      "p50_ns": 181.2,
+      "p95_ns": 381.2,
+      "p99_ns": 1331.2,
+      "max_ns": 50837.5,
+      "p50_min_ns": 175.0,
+      "p50_max_ns": 181.2,
+      "criterion_mean_ns": 260.42993620746097,
+      "criterion_ci_ns": [
+        244.2745504395234,
+        280.22029680201626
+      ]
+    },
+    {
+      "name": "cancel",
+      "description": "cancel a random resting order (20,000 resting, 100 per level)",
+      "commands_per_round": 1000,
+      "chunk": 16,
+      "runs": 5,
+      "samples_per_run": 3150,
+      "p50_ns": 418.8,
+      "p95_ns": 1062.5,
+      "p99_ns": 3512.5,
+      "max_ns": 42637.5,
+      "p50_min_ns": 406.2,
+      "p50_max_ns": 431.2,
+      "criterion_mean_ns": 453.0219758693765,
+      "criterion_ci_ns": [
+        416.8600604478235,
+        508.3247331664074
+      ]
+    },
+    {
+      "name": "amend",
+      "description": "amend a random order: 50% size-down in place, 50% re-price (20,000 resting)",
+      "commands_per_round": 1000,
+      "chunk": 16,
+      "runs": 5,
+      "samples_per_run": 3150,
+      "p50_ns": 556.2,
+      "p95_ns": 1218.8,
+      "p99_ns": 5050.0,
+      "max_ns": 93043.8,
+      "p50_min_ns": 531.2,
+      "p50_max_ns": 556.2,
+      "criterion_mean_ns": 454.09118234942514,
+      "criterion_ci_ns": [
+        427.37505982698315,
+        482.89410259532514
+      ]
+    },
+    {
+      "name": "partial_fill",
+      "description": "crossing limit partially fills a large maker at the head of the queue",
+      "commands_per_round": 1000,
+      "chunk": 16,
+      "runs": 5,
+      "samples_per_run": 3150,
+      "p50_ns": 62.5,
+      "p95_ns": 68.8,
+      "p99_ns": 87.5,
+      "max_ns": 2225.0,
+      "p50_min_ns": 56.2,
+      "p50_max_ns": 62.5,
+      "criterion_mean_ns": 31.201340281742752,
+      "criterion_ci_ns": [
+        28.390238098915404,
+        34.435030484255684
+      ]
+    },
+    {
+      "name": "sweep",
+      "description": "market order sweeps 10 levels x 5 orders (50 fills)",
+      "commands_per_round": 100,
+      "chunk": 1,
+      "runs": 5,
+      "samples_per_run": 5000,
+      "p50_ns": 5900.0,
+      "p95_ns": 12900.0,
+      "p99_ns": 36300.0,
+      "max_ns": 1199700.0,
+      "p50_min_ns": 5700.0,
+      "p50_max_ns": 6000.0,
+      "criterion_mean_ns": 5674.487233278103,
+      "criterion_ci_ns": [
+        5030.0956549074945,
+        6447.6895972090715
+      ]
+    },
+    {
+      "name": "mixed",
+      "description": "synthetic mix of limit/IOC/market/cancel/amend after 20,000-command warm-up",
+      "commands_per_round": 10000,
+      "chunk": 16,
+      "runs": 5,
+      "samples_per_run": 31250,
+      "p50_ns": 200.0,
+      "p95_ns": 300.0,
+      "p99_ns": 1225.0,
+      "max_ns": 634218.8,
+      "p50_min_ns": 193.8,
+      "p50_max_ns": 200.0,
+      "criterion_mean_ns": 135.8659503579856,
+      "criterion_ci_ns": [
+        127.96906575287653,
+        144.0874735856394
+      ]
+    }
+  ]
+}

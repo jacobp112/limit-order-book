@@ -5,12 +5,13 @@
 ```
 crates/lob        core library, no runtime dependencies
 crates/lob-cli    `lob replay`
-crates/lob-bench  deterministic workloads and Criterion benches
+crates/lob-bench  deterministic workloads, Criterion benches, latency harness
 fuzz/             cargo-fuzz targets, outside the workspace
 examples/         sample journals
 crates/lob-wasm   C-ABI wrapper used by the visual explainer  (planned)
 explainer/        static page driven by lob-wasm              (planned)
-tools/            benchmark plotting                          (planned)
+tools/            benchmark aggregation and charts
+docs/bench/       published benchmark data and charts
 ```
 
 Core modules:
