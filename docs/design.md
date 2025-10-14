@@ -8,8 +8,8 @@ crates/lob-cli    `lob replay`
 crates/lob-bench  deterministic workloads, Criterion benches, latency harness
 fuzz/             cargo-fuzz targets, outside the workspace
 examples/         sample journals
-crates/lob-wasm   C-ABI wrapper used by the visual explainer  (planned)
-explainer/        static page driven by lob-wasm              (planned)
+crates/lob-wasm   WebAssembly exports of the engine for the explainer
+explainer/        JS wrapper and Node check (page planned)
 tools/            benchmark aggregation and charts
 docs/bench/       published benchmark data and charts
 ```
@@ -104,6 +104,23 @@ the engine could not have reached. Tests check:
 - every intermediate snapshot decodes and restores to the same bytes;
 - pinned digests for a 20,000-command generated stream, so CI on Linux and
   Windows must agree.
+
+## WebAssembly boundary
+
+`lob-wasm` exposes the unmodified engine to JavaScript through a few C-ABI
+functions and no binding generator. JavaScript writes one journal line into a
+buffer owned by the module and calls `lob_apply`; the module parses it with
+the same journal parser as `lob replay`, applies it, and writes a JSON
+document with the events (each including its stable text form) and the whole
+book. The explainer therefore cannot drift from the engine's behaviour: it has
+no matching logic of its own. A Node check (`explainer/check.mjs`), run in CI
+against a freshly built module and against the committed one, replays the
+example session and requires the same state and event digests as the CLI.
+
+The size-optimised build uses the `wasm` profile
+(`cargo build -p lob-wasm --profile wasm --target wasm32-unknown-unknown`,
+about 73 KB). The only `unsafe` in the workspace is `#[unsafe(no_mangle)]` on
+these exports; the core crate forbids `unsafe`.
 
 ## Invariant checking
 

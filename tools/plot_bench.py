@@ -84,6 +84,13 @@ def footer(fig, data):
     )
 
 
+def save(fig, out: Path):
+    """SVG without a creation date and with LF line endings, so output is reproducible."""
+    fig.savefig(out, facecolor=SURFACE, metadata={"Date": None})
+    plt.close(fig)
+    out.write_bytes(out.read_bytes().replace(b"\r\n", b"\n"))
+
+
 def aggregate(runs):
     """Median across runs of each percentile, keyed like a single run."""
     first = runs[0]
@@ -149,8 +156,7 @@ def latency_chart(data, out: Path):
               fontsize=9, labelcolor=INK, handletextpad=0.3, columnspacing=1.2)
     fig.subplots_adjust(left=0.19, right=0.97, top=0.84, bottom=0.24)
     footer(fig, data)
-    fig.savefig(out, facecolor=SURFACE, metadata={"Date": None})
-    plt.close(fig)
+    save(fig, out)
 
 
 def throughput_chart(data, out: Path):
@@ -175,8 +181,7 @@ def throughput_chart(data, out: Path):
                  fontsize=12, pad=10)
     fig.subplots_adjust(left=0.19, right=0.97, top=0.88, bottom=0.26)
     footer(fig, data)
-    fig.savefig(out, facecolor=SURFACE, metadata={"Date": None})
-    plt.close(fig)
+    save(fig, out)
 
 
 def table(data) -> str:
@@ -204,7 +209,10 @@ def main():
     out.mkdir(parents=True, exist_ok=True)
     data = aggregate(runs)
     criterion(data, crit_dir, out)
-    (out / "summary.json").write_text(json.dumps(data, indent=2) + "\n", encoding="utf-8")
+    # Explicit LF so regenerating on Windows is byte-identical to the repository.
+    (out / "summary.json").write_text(
+        json.dumps(data, indent=2) + "\n", encoding="utf-8", newline="\n"
+    )
     plt.rcParams["svg.fonttype"] = "none"
     plt.rcParams["font.family"] = ["DejaVu Sans"]
     plt.rcParams["svg.hashsalt"] = "lob"  # stable ids so re-renders diff cleanly

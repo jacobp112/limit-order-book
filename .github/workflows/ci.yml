@@ -25,3 +25,19 @@ jobs:
       - run: cargo test --workspace
       - name: fuzz harness (stable, seed corpus)
         run: cargo test --release --manifest-path fuzz/Cargo.toml
+
+  wasm:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: wasm32-unknown-unknown
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: cargo build -p lob-wasm --profile wasm --target wasm32-unknown-unknown
+      - name: freshly built module matches `lob replay`
+        run: node explainer/check.mjs target/wasm32-unknown-unknown/wasm/lob_wasm.wasm
+      - name: committed explainer/lob.wasm matches `lob replay`
+        run: node explainer/check.mjs

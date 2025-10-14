@@ -1,0 +1,17 @@
+[package]
+name = "lob-wasm"
+description = "WebAssembly exports of the lob engine for the visual explainer"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish = false
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+lob = { path = "../lob" }
+
+[lints]
+workspace = true

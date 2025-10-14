@@ -1,6 +1,6 @@
 [workspace]
 resolver = "3"
-members = ["crates/lob", "crates/lob-cli", "crates/lob-bench"]
+members = ["crates/lob", "crates/lob-cli", "crates/lob-bench", "crates/lob-wasm"]
 exclude = ["fuzz"]
 
 [workspace.package]
@@ -29,3 +29,11 @@ debug = "line-tables-only"
 
 [profile.bench]
 inherits = "release"
+
+# Size-optimised build of lob-wasm for the explainer page.
+[profile.wasm]
+inherits = "release"
+opt-level = "s"
+debug = false
+strip = true
+panic = "abort"
