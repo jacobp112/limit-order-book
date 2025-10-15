@@ -11,6 +11,7 @@ Work in progress. See:
 - [Testing and benchmark strategy](docs/testing.md)
 - [Benchmark results and method](docs/benchmarks.md)
 - [Backlog](docs/backlog.md)
+- [Explainer: step through matching in the browser](explainer/README.md)
 
 ## Build
 

@@ -88,10 +88,11 @@ As a reviewer, I want to reproduce the performance figures.
 As a reviewer, I want latency distributions shown as charts.
 - A script renders median, p95 and p99 from the benchmark output.
 
-## US-017 — Visual explainer · todo
+## US-017 — Visual explainer · done
 As a visitor, I want to submit orders and watch how they match.
 - Bids and asks are shown by level with per-order queues.
-- Submitted orders animate through the fills they produce; trades are listed.
+- A submitted order can be stepped through event by event (or run on a
+  timer), highlighting each resting order it trades against; trades are listed.
 - Behaviour comes from the real engine compiled to WebAssembly.
 
 ## US-018 — Reviewer documentation · todo

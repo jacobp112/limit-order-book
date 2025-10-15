@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>lob explainer</title>
+  <link rel="stylesheet" href="style.css">
+  <script type="module" src="app.js"></script>
+</head>
+<body>
+  <h1>lob explainer</h1>
+  <p class="note">
+    Runs the engine from <code>crates/lob</code> compiled to WebAssembly
+    (<code>crates/lob-wasm</code>). Commands use the journal syntax of
+    <code>lob replay</code>. The page has no matching logic: it applies each
+    command, then steps through the events the engine returned.
+  </p>
+
+  <div class="grid">
+    <section>
+      <h2>Journal</h2>
+      <p>
+        <label>Example <select id="example"></select></label>
+        <button type="button" id="load">Load</button>
+      </p>
+      <textarea id="journal" rows="12" spellcheck="false" aria-label="Journal, one command per line"></textarea>
+      <p class="controls">
+        <button type="button" id="step" title="Apply the next engine event">Step event</button>
+        <button type="button" id="next" title="Finish the current command and apply the next line">Next command</button>
+        <button type="button" id="run">Run</button>
+        <button type="button" id="reset">Reset book</button>
+        <span id="position" class="muted"></span>
+      </p>
+
+      <h2>Command</h2>
+      <form id="builder" class="builder">
+        <select name="side" aria-label="Side"><option>buy</option><option>sell</option></select>
+        <select name="kind" aria-label="Order type"><option>limit</option><option>ioc</option><option>market</option></select>
+        <input name="price" type="number" step="1" value="101" aria-label="Price" title="price (ticks)">
+        <input name="qty" type="number" step="1" min="1" value="5" aria-label="Quantity" title="quantity (lots)">
+        <button type="submit">Append</button>
+      </form>
+      <form id="direct" class="builder">
+        <input name="line" type="text" spellcheck="false" placeholder="cancel 3 | amend 3 - 4 | amend 3 101 4" aria-label="Journal line">
+        <button type="submit">Append</button>
+      </form>
+      <p id="error" class="error" hidden></p>
+    </section>
+
+    <section>
+      <h2>Book</h2>
+      <p id="incoming" class="incoming muted">no command in progress</p>
+      <table id="book" class="book">
+        <thead><tr><th>side</th><th class="num">price</th><th class="num">size</th><th>queue (front first) #id:qty</th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </section>
+
+    <section>
+      <h2>Events</h2>
+      <ul id="events" class="events"></ul>
+    </section>
+
+    <section>
+      <h2>Trades</h2>
+      <table class="trades">
+        <thead><tr><th class="num">price</th><th class="num">qty</th><th>maker</th><th>taker</th></tr></thead>
+        <tbody id="trades"></tbody>
+      </table>
+    </section>
+  </div>
+
+  <p class="note">
+    State digest <code id="digest">-</code> (FNV-1a of the canonical snapshot;
+    compare with the <code>state digest</code> line printed by <code>lob replay</code>
+    for the same journal).
+  </p>
+</body>
+</html>

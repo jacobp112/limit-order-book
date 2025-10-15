@@ -9,7 +9,7 @@ crates/lob-bench  deterministic workloads, Criterion benches, latency harness
 fuzz/             cargo-fuzz targets, outside the workspace
 examples/         sample journals
 crates/lob-wasm   WebAssembly exports of the engine for the explainer
-explainer/        JS wrapper and Node check (page planned)
+explainer/        step-through inspector page running lob.wasm
 tools/            benchmark aggregation and charts
 docs/bench/       published benchmark data and charts
 ```

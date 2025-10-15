@@ -1,0 +1,50 @@
+body {
+  font-family: system-ui, sans-serif;
+  font-size: 15px;
+  margin: 16px;
+  max-width: 1200px;
+  color: #222;
+}
+h1 { font-size: 1.3em; margin: 0 0 4px; }
+h2 { font-size: 1em; margin: 16px 0 6px; }
+code, textarea, .events, .book td, .trades td, .incoming, input[type="text"] {
+  font-family: ui-monospace, Consolas, monospace;
+  font-size: 13px;
+}
+.note { color: #555; max-width: 90ch; }
+.muted { color: #777; }
+.error { color: #b00; }
+[hidden] { display: none; }
+
+.grid {
+  display: grid;
+  grid-template-columns: minmax(300px, 1fr) minmax(360px, 1.3fr);
+  gap: 0 24px;
+}
+@media (max-width: 760px) { .grid { grid-template-columns: 1fr; } }
+
+textarea { width: 100%; box-sizing: border-box; }
+.controls button, .builder button { margin-right: 4px; }
+.builder { display: flex; gap: 4px; margin-bottom: 6px; flex-wrap: wrap; }
+.builder input[type="number"] { width: 6em; }
+.builder input[type="text"] { flex: 1; min-width: 12em; }
+
+table { border-collapse: collapse; width: 100%; }
+th, td { text-align: left; padding: 2px 8px 2px 0; border-bottom: 1px solid #ddd; }
+th { font-weight: 600; font-size: 0.85em; color: #555; }
+.num { text-align: right; padding-right: 12px; }
+
+.book tr.ask td:nth-child(-n+2) { color: #a33; }
+.book tr.bid td:nth-child(-n+2) { color: #236; }
+.book tr.spread td { color: #777; border-bottom: 1px dashed #bbb; }
+.book .o { display: inline-block; padding: 0 3px; margin-right: 4px; border: 1px solid transparent; }
+.book .o.hit { border-color: #000; background: #ffe58a; }
+.book .o.new { border-color: #000; background: #cfe8ff; }
+.book .o.gone { text-decoration: line-through; color: #999; }
+
+.events { list-style: none; padding: 0; margin: 0; max-height: 360px; overflow: auto; position: relative; }
+.events li { padding-left: 2ch; }
+.events li.cmd { padding-left: 0; color: #555; margin-top: 4px; }
+.events li.pending { color: #aaa; }
+.events li.current { background: #ffe58a; }
+.incoming { margin: 0 0 6px; }

@@ -3,8 +3,9 @@
 //
 //   node explainer/check.mjs [path/to/lob.wasm]
 
-import { readFile } from "node:fs/promises";
+import { readdir, readFile } from "node:fs/promises";
 import { loadEngine } from "./lob.mjs";
+import { applyEvent, canonical, clone } from "./model.mjs";
 
 const wasmPath = process.argv[2] ?? new URL("./lob.wasm", import.meta.url);
 const journal = await readFile(new URL("../examples/journals/session.journal", import.meta.url), "utf8");
@@ -33,3 +34,27 @@ if (actual.state !== expected.state || actual.events !== expected.events) {
   process.exit(1);
 }
 console.log("ok: wasm engine matches `lob replay`");
+
+// The page redraws the book from events alone (model.mjs). After every
+// command of every seed journal, that model must equal the engine's book.
+const seedDir = new URL("../fuzz/seeds/journal/", import.meta.url);
+let checked = 0;
+for (const name of (await readdir(seedDir)).sort()) {
+  engine.reset();
+  let model = { bids: [], asks: [] };
+  const text = await readFile(new URL(name, seedDir), "utf8");
+  for (const line of text.split("\n")) {
+    const command = line.split("#")[0].trim();
+    if (!command) continue;
+    const out = engine.apply(command);
+    if (!out.ok) throw new Error(`${name}: ${command}: ${out.error}`);
+    for (const e of out.events) applyEvent(model, e);
+    if (canonical(model) !== canonical(out.book)) {
+      console.error(`${name}: explainer model diverged from engine after \`${command}\``);
+      process.exit(1);
+    }
+    model = clone(out.book);
+    checked++;
+  }
+}
+console.log(`ok: explainer model matches the engine after all ${checked} seed-journal commands`);
