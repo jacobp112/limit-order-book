@@ -95,7 +95,7 @@ As a visitor, I want to submit orders and watch how they match.
   timer), highlighting each resting order it trades against; trades are listed.
 - Behaviour comes from the real engine compiled to WebAssembly.
 
-## US-018 — Reviewer documentation · todo
+## US-018 — Reviewer documentation · done
 As a reviewer, I want to understand the project quickly.
 - The README covers scope, matching, data structures, determinism,
   invariants, testing, fuzzing, benchmarks and the explainer, with links.

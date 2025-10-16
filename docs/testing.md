@@ -59,12 +59,14 @@ invariant audit. libFuzzer's Windows support is experimental, so fuzzing runs
 in a Linux container; the harness logic is also exercised on stable by
 `cargo test` in `fuzz/`. See `fuzz/README.md` for targets and commands.
 
-Quality gates before every commit:
+Quality gates before every commit (CI runs the same on Linux and Windows):
 
 ```
 cargo fmt --all --check
 cargo clippy --workspace --all-targets -- -D warnings
 cargo test --workspace
+cargo test --release --manifest-path fuzz/Cargo.toml   # fuzz harness on seeds
+node explainer/check.mjs                              # wasm engine vs CLI, explainer model vs engine
 ```
 
 ## Benchmarks

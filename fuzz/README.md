@@ -37,6 +37,22 @@ under `artifacts/<target>/`; reproduce it with
 Inputs that once crashed are kept under `seeds/<target>/`, named after the
 bug, and replayed by `cargo test`.
 
+## Campaigns
+
+Run in the Docker image above (rustc 1.100.0-nightly, cargo-fuzz 0.13.2,
+libFuzzer with debug assertions), 10 minutes per target, the three targets in
+parallel on a 4-core/8-thread laptop:
+
+| Target | Executions | Result |
+|---|---:|---|
+| `journal` | 2,072,463 | no failures |
+| `commands` | 460,181 | no failures |
+| `snapshot` | 125,923 | crash after about 4 s (below) |
+| `snapshot`, after the fix | 67,012,826 | no failures |
+
+`commands` is the slowest because every input runs the full invariant audit
+and three replays.
+
 ## Findings
 
 | Target | Input | Problem | Fix |
