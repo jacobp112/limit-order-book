@@ -8,6 +8,7 @@
   <script type="module" src="app.js"></script>
 </head>
 <body>
+  <header>
   <h1>lob explainer</h1>
   <p class="note">
     Runs the engine from <code>crates/lob</code> compiled to WebAssembly
@@ -15,6 +16,7 @@
     <code>lob replay</code>. The page has no matching logic: it applies each
     command, then steps through the events the engine returned.
   </p>
+  </header>
 
   <div class="grid">
     <section>
@@ -25,7 +27,7 @@
       </p>
       <textarea id="journal" rows="12" spellcheck="false" aria-label="Journal, one command per line"></textarea>
       <p class="controls">
-        <button type="button" id="step" title="Apply the next engine event">Step event</button>
+        <button type="button" id="step" class="primary" title="Apply the next engine event">Step event</button>
         <button type="button" id="next" title="Finish the current command and apply the next line">Next command</button>
         <button type="button" id="run">Run</button>
         <button type="button" id="reset">Reset book</button>
@@ -70,10 +72,10 @@
     </section>
   </div>
 
-  <p class="note">
+  <footer class="note">
     State digest <code id="digest">-</code> (FNV-1a of the canonical snapshot;
     compare with the <code>state digest</code> line printed by <code>lob replay</code>
     for the same journal).
-  </p>
+  </footer>
 </body>
 </html>

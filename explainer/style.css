@@ -1,16 +1,23 @@
 body {
   font-family: system-ui, sans-serif;
   font-size: 15px;
-  margin: 16px;
-  max-width: 1200px;
+  margin: 0;
+  background: #f3f4f6;
   color: #222;
 }
+header, .grid, footer { max-width: 1200px; margin: 0 auto; padding: 0 16px; }
+header { padding-top: 16px; padding-bottom: 12px; }
 h1 { font-size: 1.3em; margin: 0 0 4px; }
-h2 { font-size: 1em; margin: 16px 0 6px; }
+h2 { font-size: 0.95em; margin: 14px 0 6px; }
+section > h2:first-child {
+  margin: -10px -12px 10px; padding: 6px 12px;
+  background: #e9ebee; border-bottom: 1px solid #d5d8dc;
+}
 code, textarea, .events, .book td, .trades td, .incoming, input[type="text"] {
   font-family: ui-monospace, Consolas, monospace;
   font-size: 13px;
 }
+code { background: #e9ebee; padding: 0 3px; border-radius: 2px; }
 .note { color: #555; max-width: 90ch; }
 .muted { color: #777; }
 .error { color: #b00; }
@@ -19,32 +26,70 @@ code, textarea, .events, .book td, .trades td, .incoming, input[type="text"] {
 .grid {
   display: grid;
   grid-template-columns: minmax(300px, 1fr) minmax(360px, 1.3fr);
-  gap: 0 24px;
+  gap: 12px;
 }
 @media (max-width: 760px) { .grid { grid-template-columns: 1fr; } }
 
-textarea { width: 100%; box-sizing: border-box; }
-.controls button, .builder button { margin-right: 4px; }
+section {
+  background: #fff;
+  border: 1px solid #d5d8dc;
+  border-radius: 4px;
+  padding: 10px 12px 12px;
+  overflow: hidden;
+}
+section p { margin: 0 0 8px; }
+
+button {
+  font: inherit; font-size: 0.9em;
+  padding: 3px 10px; border: 1px solid #b9bec5; border-radius: 3px;
+  background: #f7f8f9; cursor: pointer;
+}
+button:hover { background: #eceef1; }
+button.primary { background: #2f5d8a; border-color: #2f5d8a; color: #fff; }
+button.primary:hover { background: #274f76; }
+button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible {
+  outline: 2px solid #2f5d8a; outline-offset: 1px;
+}
+select, input { font: inherit; font-size: 0.9em; padding: 2px 4px; }
+
+textarea {
+  width: 100%; box-sizing: border-box; padding: 6px;
+  border: 1px solid #c8ccd1; border-radius: 3px; background: #fbfbfc;
+}
+.controls { display: flex; flex-wrap: wrap; align-items: center; gap: 4px; margin-top: 6px; }
+.controls #position { margin-left: 6px; }
 .builder { display: flex; gap: 4px; margin-bottom: 6px; flex-wrap: wrap; }
 .builder input[type="number"] { width: 6em; }
 .builder input[type="text"] { flex: 1; min-width: 12em; }
 
 table { border-collapse: collapse; width: 100%; }
-th, td { text-align: left; padding: 2px 8px 2px 0; border-bottom: 1px solid #ddd; }
-th { font-weight: 600; font-size: 0.85em; color: #555; }
-.num { text-align: right; padding-right: 12px; }
+th, td { text-align: left; padding: 4px 8px; border-bottom: 1px solid #e3e5e8; }
+th { font-weight: 600; font-size: 0.8em; color: #555; background: #f5f6f7; }
+.num { text-align: right; }
 
+.book tr.ask td { background: #fcf5f5; }
+.book tr.bid td { background: #f4f7fc; }
 .book tr.ask td:nth-child(-n+2) { color: #a33; }
 .book tr.bid td:nth-child(-n+2) { color: #236; }
-.book tr.spread td { color: #777; border-bottom: 1px dashed #bbb; }
-.book .o { display: inline-block; padding: 0 3px; margin-right: 4px; border: 1px solid transparent; }
+.book td:nth-child(2) { font-weight: 600; }
+.book tr.spread td { color: #777; background: #fff; border-bottom: 1px dashed #bbb; font-size: 12px; }
+.book .o {
+  display: inline-block; padding: 0 4px; margin: 1px 4px 1px 0;
+  border: 1px solid #cfd3d8; border-radius: 2px; background: #fff;
+}
 .book .o.hit { border-color: #000; background: #ffe58a; }
 .book .o.new { border-color: #000; background: #cfe8ff; }
 .book .o.gone { text-decoration: line-through; color: #999; }
 
+.incoming {
+  margin: 0 0 8px; padding: 4px 8px;
+  border: 1px solid #d5d8dc; border-left: 3px solid #2f5d8a; background: #f7f8f9;
+}
+
 .events { list-style: none; padding: 0; margin: 0; max-height: 360px; overflow: auto; position: relative; }
-.events li { padding-left: 2ch; }
-.events li.cmd { padding-left: 0; color: #555; margin-top: 4px; }
+.events li { padding: 1px 0 1px 2ch; }
+.events li.cmd { padding-left: 0; color: #555; margin-top: 6px; }
 .events li.pending { color: #aaa; }
 .events li.current { background: #ffe58a; }
-.incoming { margin: 0 0 6px; }
+
+footer { padding-top: 12px; padding-bottom: 24px; }
